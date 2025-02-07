@@ -1,0 +1,11 @@
+cluster.name: test-es
+node.name: test-es-node1
+
+path:
+  data: ./data
+  logs: ./logs
+
+network.host: 0.0.0.0
+
+discovery.type: "single-node"
+xpack.security.enabled: false

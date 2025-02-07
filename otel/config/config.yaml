@@ -1,0 +1,81 @@
+receivers:
+  # worker-2
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: exporter-0
+          scrape_interval: 15s
+          static_configs:
+            - targets: [exporter-0:9100] # exporter
+          relabel_configs:
+            - action: replace
+              replacement: exporter-0
+              target_label: job
+        - job_name: exporter-1
+          scrape_interval: 15s
+          static_configs:
+            - targets: [exporter-1:9101] # exporter
+          relabel_configs:
+            - action: replace
+              replacement: exporter-1
+              target_label: job
+        - job_name: exporter-2
+          scrape_interval: 15s
+          static_configs:
+            - targets: [exporter-2:9102] # exporter
+          relabel_configs:
+            - action: replace
+              replacement: exporter-2
+              target_label: job
+  fluentforward:
+    endpoint: 0.0.0.0:8006
+
+processors:
+  resource:
+    attributes:
+      - key: environment
+        value: "production"
+        action: upsert
+      - key: service.instance.id
+        from_attribute: host.name
+        action: insert
+
+exporters:
+  prometheus:
+    endpoint: 0.0.0.0:19100
+    namespace: default
+    resource_to_telemetry_conversion:
+      enabled: true
+    enable_open_metrics: true
+  prometheusremotewrite/exporter-0:
+    endpoint: "http://prometheus:9090/api/v1/write"
+    resource_to_telemetry_conversion:
+      enabled: true
+  prometheusremotewrite/exporter-1:
+    endpoint: "http://prometheus:9090/api/v1/write"
+    resource_to_telemetry_conversion:
+      enabled: true
+  prometheusremotewrite/exporter-2:
+    endpoint: "http://prometheus:9090/api/v1/write"
+    resource_to_telemetry_conversion:
+      enabled: true
+  elasticsearch:
+    endpoint: http://elasticsearch:9200
+
+service:
+  pipelines:
+    metrics/local:
+      receivers: [prometheus]
+      exporters: [prometheus]
+    metrics/0:
+      receivers: [prometheus]
+      exporters: [prometheusremotewrite/exporter-0]
+    metrics/1:
+      receivers: [prometheus]
+      exporters: [prometheusremotewrite/exporter-1]
+    metrics/2:
+      receivers: [prometheus]
+      exporters: [prometheusremotewrite/exporter-2]
+    logs:
+      receivers: [fluentforward]
+      exporters: [elasticsearch]

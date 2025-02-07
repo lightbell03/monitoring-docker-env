@@ -1,0 +1,100 @@
+version: "3"
+
+services:
+  exporter-0:
+    build:
+      context: ./node_exporter
+      dockerfile: ./Dockerfile
+    container_name: exporter-0
+    ports:
+      - "9100:9100"
+    networks:
+      - otelcol_net
+
+  exporter-1:
+    build:
+      context: ./node_exporter
+      dockerfile: ./Dockerfile
+    container_name: exporter-1
+    ports:
+      - "9101:9100"
+    networks:
+      - otelcol_net
+
+  exporter-2:
+    build:
+      context: ./node_exporter
+      dockerfile: ./Dockerfile
+    container_name: exporter-2
+    ports:
+      - "9102:9100"
+    networks:
+      - otelcol_net
+
+  fluentd:
+    build:
+      context: ./fluentd
+      dockerfile: Dockerfile
+    container_name: fluentd
+    networks:
+      - otelcol_net
+    extra_hosts:
+      - "opentelemetry:host-gateway"
+
+  prometheus:
+    build:
+      context: ./prometheus
+      dockerfile: ./Dockerfile
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - otelcol_net
+    extra_hosts:
+      - "opentelemetry:host-gateway"
+
+  elasticsearch:
+    build:
+      context: ./elastic_search
+      dockerfile: Dockerfile
+    container_name: es
+    ports:
+      - "9200:9200"
+    networks:
+      - otelcol_net
+
+  kibana:
+    build:
+      context: ./kibana
+      dockerfile: Dockerfile
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    networks:
+      - otelcol_net
+    extra_hosts:
+      - "elasticsearch:host-gateway"
+    depends_on:
+      - elasticsearch
+
+  opentelemetry:
+    build:
+      context: ./otel
+      dockerfile: ./Dockerfile
+    container_name: otel
+    ports:
+      - "19100:19100"
+      - "8006:8006"
+    networks:
+      - otelcol_net
+    extra_hosts:
+      - "exporter-0:host-gateway"
+      - "exporter-1:host-gateway"
+      - "exporter-2:host-gateway"
+      - "elasticsearch:host-gateway"
+      - "docker.host.internal:host-gateway"
+
+networks:
+  otelcol_net:
+    name: otelcol_net
+    driver: bridge
