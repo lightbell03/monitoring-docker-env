@@ -40,6 +40,8 @@ services:
       - otelcol_net
     extra_hosts:
       - "opentelemetry:host-gateway"
+    volumes:
+      - ./log/share:/script
 
   prometheus:
     build:
@@ -93,6 +95,23 @@ services:
       - "exporter-2:host-gateway"
       - "elasticsearch:host-gateway"
       - "docker.host.internal:host-gateway"
+
+  log_gen:
+    build:
+      context: ./log
+      dockerfile: Dockerfile
+    container_name: log_gen
+    volumes:
+      - ./log/share:/script
+
+volumes:
+  logging_file:
+    name: logging_file
+    driver: "local"
+    driver_opts:
+      type: none
+      device: "$PWD/log/share"
+      o: "bind"
 
 networks:
   otelcol_net:
